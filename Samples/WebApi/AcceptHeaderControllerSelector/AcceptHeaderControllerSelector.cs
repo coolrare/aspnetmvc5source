@@ -94,6 +94,10 @@ namespace AcceptHeaderControllerSelectorSample
 
             // Get the namespace and controller variables from the route data.
             string namespaceName = null;
+            if (!request.Headers.Accept.Any())
+            {
+                namespaceName = _namespaceResolver("");
+            }
             foreach (var accepts in request.Headers.Accept)
             {
                 namespaceName = _namespaceResolver(accepts.MediaType);
