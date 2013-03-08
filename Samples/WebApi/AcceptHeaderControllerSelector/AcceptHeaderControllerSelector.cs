@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
 using System.Web;
 using System.Web.Http;
@@ -19,11 +20,11 @@ namespace AcceptHeaderControllerSelectorSample
         private const string ControllerKey = "controller";
 
         private readonly HttpConfiguration _configuration;
-        private readonly Func<string, string> _namespaceResolver;
+        private readonly Func<MediaTypeHeaderValue, string> _namespaceResolver;
         private readonly Lazy<Dictionary<string, HttpControllerDescriptor>> _controllers;
         private readonly HashSet<string> _duplicates;
 
-        public AcceptHeaderControllerSelector(HttpConfiguration config, Func<string, string> namespaceResolver)
+        public AcceptHeaderControllerSelector(HttpConfiguration config, Func<MediaTypeHeaderValue, string> namespaceResolver)
         {
             _configuration = config;
             _namespaceResolver = namespaceResolver;
@@ -94,13 +95,9 @@ namespace AcceptHeaderControllerSelectorSample
 
             // Get the namespace and controller variables from the route data.
             string namespaceName = null;
-            if (!request.Headers.Accept.Any())
-            {
-                namespaceName = _namespaceResolver("");
-            }
             foreach (var accepts in request.Headers.Accept)
             {
-                namespaceName = _namespaceResolver(accepts.MediaType);
+                namespaceName = _namespaceResolver(accepts);
                 if (namespaceName != null)
                 {
                     break;

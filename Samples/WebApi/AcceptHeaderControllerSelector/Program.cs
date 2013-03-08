@@ -33,22 +33,20 @@ namespace AcceptHeaderControllerSelectorSample
                 config.Services.Replace(typeof(IHttpControllerSelector),
                     new AcceptHeaderControllerSelector(config, accept =>
                         {
-                            var matches = Regex.Match(accept, @"application\/vnd.api.(.*)\+.*");
-
-                            if (matches.Groups.Count >= 2)
+                            foreach (var parameter in accept.Parameters)
                             {
-                                return matches.Groups[1].Value;
+                                if (parameter.Name.Equals("version", StringComparison.InvariantCultureIgnoreCase))
+                                {
+                                    switch (parameter.Value)
+                                    {
+                                        case "1.0": return "v1";
+                                        case "2.0": return "v2";
+                                    }
+                                }
                             }
-
+                            
                             return "v2"; // default namespace, return null to throw 404 when namespace not given
                         }));
-
-                // Add custom media types as supported to their default formatters
-                config.Formatters.JsonFormatter.SupportedMediaTypes.Add(new MediaTypeWithQualityHeaderValue("application/vnd.api.v1+json"));
-                config.Formatters.JsonFormatter.SupportedMediaTypes.Add(new MediaTypeWithQualityHeaderValue("application/vnd.api.v2+json"));
-
-                config.Formatters.XmlFormatter.SupportedMediaTypes.Add(new MediaTypeWithQualityHeaderValue("application/vnd.api.v1+xml"));
-                config.Formatters.XmlFormatter.SupportedMediaTypes.Add(new MediaTypeWithQualityHeaderValue("application/vnd.api.v2+xml"));
 
                 // Create server
                 server = new HttpSelfHostServer(config);
@@ -84,8 +82,10 @@ namespace AcceptHeaderControllerSelectorSample
             HttpClient client = new HttpClient();
             client.BaseAddress = _baseAddress;
 
+            var acceptsHeader1 = new MediaTypeWithQualityHeaderValue("application/json");
+            acceptsHeader1.Parameters.Add(new NameValueHeaderValue("version", "1.0"));
             client.DefaultRequestHeaders.Accept.Clear();
-            client.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.api.v1+json");
+            client.DefaultRequestHeaders.Accept.Add(acceptsHeader1);
             using (HttpResponseMessage response = client.GetAsync("api/values").Result)
             {
                 response.EnsureSuccessStatusCode();
@@ -93,8 +93,10 @@ namespace AcceptHeaderControllerSelectorSample
                 Console.WriteLine("Version 1 response: '{0}'\n", content);
             }
 
+            var acceptsHeader2 = new MediaTypeWithQualityHeaderValue("application/json");
+            acceptsHeader2.Parameters.Add(new NameValueHeaderValue("version", "2.0"));
             client.DefaultRequestHeaders.Accept.Clear();
-            client.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.api.v2+json");
+            client.DefaultRequestHeaders.Accept.Add(acceptsHeader2);
             using (HttpResponseMessage response = client.GetAsync("api/values").Result)
             {
                 response.EnsureSuccessStatusCode();
