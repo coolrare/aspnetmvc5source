@@ -78,7 +78,7 @@ namespace BasicAuthentication.Client
             // The current HTTP specification says characters here are ISO-8859-1.
             // However, the draft specification for the next version of HTTP indicates this encoding is infrequently
             // used in practice and defines behavior only for ASCII.
-            Encoding encoding = Encoding.GetEncoding("iso-8859-1");
+            Encoding encoding = Encoding.GetEncoding("ASCII");
             byte[] toBase64 = encoding.GetBytes(toEncode);
             string parameter = Convert.ToBase64String(toBase64);
 
